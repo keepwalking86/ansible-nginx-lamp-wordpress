@@ -1,0 +1,76 @@
+- name: Installing MariaDB server
+  yum:
+    name:
+      - mariadb-server
+      - MySQL-python
+    state: latest
+
+- name: Sure MariaDB starts at boot
+  systemd: 
+    name: mariadb
+    enabled: yes
+
+- name: Start MariaDB by systemd
+  systemd:
+    name: mariadb
+    state: started
+
+- name: Check if root password is set
+  shell: >
+    mysqladmin -u root status
+  changed_when: false
+  failed_when: false
+  register: root_pwd_check
+
+- name: Set MariaDB root password for the first time
+  mysql_user:
+    name: root
+    password: "{{ mariadb_root_password }}"
+    host: localhost
+    state: present
+  when: root_pwd_check.rc == 0
+
+- name: Set MariaDB root password for 127.0.0.1
+  mysql_user:
+    name: root
+    password: "{{ mariadb_root_password }}"
+    host: 127.0.0.1
+    login_user: root
+    login_password: "{{ mariadb_root_password }}"
+    state: present
+
+- name: Remove anonymous users
+  mysql_user:
+    name: ''
+    host_all: true
+    login_user: root
+    login_password: "{{ mariadb_root_password }}"
+    state: absent
+
+- name: Create database for wordpress
+  mysql_db:
+    name: "{{ wp_db_name }}"
+    state: present
+    login_user: root
+    login_password: "{{ mariadb_root_password }}"
+    
+- name: Create dbuser for {{ vhost }} wordpress site
+  mysql_user:
+    name: "{{ wp_db_user }}"
+    password: "{{ wp_db_password }}"
+    priv: "{{ wp_db_name }}.*:ALL"
+    host: "{{ item }}"
+    login_user: root
+    login_password: "{{ mariadb_root_password }}"
+    state: present
+  with_items:
+    - localhost
+    - 127.0.0.1
+    - "{{ server_web }}"
+    - "{{ server_db }}"
+#By default, SELinux may not be permitted to establish a TCP connection to MySQL
+- name: Disable SELinux
+  shell: |
+    setenforce 0
+    sed -i 's/^SELINUX=.*/SELINUX=disabled/g' /etc/sysconfig/selinux
+

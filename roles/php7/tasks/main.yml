@@ -1,0 +1,20 @@
+- name: Add php7 repository
+  yum:
+    name: "{{ php7_repo }}"
+    state: present
+- name: Install PHP71 packages
+  yum: 
+    name:
+      - php71w
+      - php71w-common
+      - php71w-gd
+      - php71w-phar
+      - php71w-xml
+      - php71w-cli
+      - php71w-mbstring
+      - php71w-tokenizer
+      - php71w-openssl
+      - php71w-pdo
+      - php71w-devel
+      - php71w-mysql
+    state: latest

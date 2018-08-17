@@ -1,0 +1,14 @@
+#Server IP Addresses
+server_web: 192.168.1.110
+server_db: 192.168.1.111
+
+#Virtual Host
+vhost: example.local
+
+#Document Root for all sites
+document_root: /var/www
+
+#Wordpress Database
+wp_db_user: wordpress
+wp_db_password: P@ssw0rd
+wp_db_name: wordpress

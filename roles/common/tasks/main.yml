@@ -1,0 +1,11 @@
+- name: Install required packages
+  yum:
+    name:
+      - make
+      - gcc
+      - gcc-c++
+      - pcre-devel
+      - zlib-devel
+      - openssl-devel
+      - git
+    state: latest

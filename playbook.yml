@@ -1,0 +1,13 @@
+---
+- hosts: webservers
+  become: yes
+  roles:
+    - common
+    - php7
+    - apache
+    - wordpress
+    - nginx
+- hosts: databases
+  become: yes
+  roles:
+    - mariadb

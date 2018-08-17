@@ -1,0 +1,22 @@
+- name: Install Apache latest version
+  yum:
+    name: httpd
+    state: latest
+
+- name: Replace httpd.conf configuration file
+  template:
+    src: httpd.conf
+    dest: /etc/httpd/conf/httpd.conf
+
+- name: Copy {{ vhost }} configuration file
+  template: src={{ vhost }}.conf dest=/etc/httpd/conf.d/{{ vhost }}.conf
+
+- name: Sure apache starts at boot
+  systemd:
+    name: httpd
+    enabled: yes
+
+- name: Start apache by systemd
+  systemd:
+    name: httpd
+    state: started

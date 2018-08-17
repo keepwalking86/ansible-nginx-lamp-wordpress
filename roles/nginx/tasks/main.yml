@@ -1,0 +1,61 @@
+- name: Create nginx user
+  user:
+    name: nginx
+    comment: "nginx user"
+    shell: /sbin/nologin
+    home: /dev/null
+
+- name: Download Nginx source package
+  get_url:
+    url: https://nginx.org/download/{{ nginx_version }}.tar.gz
+    dest: /opt/{{ nginx_version }}.tar.gz
+
+- name: Install Nginx from source  
+  shell: |
+    cd /opt
+    tar zxvf {{ nginx_version }}.tar.gz
+    cd {{ nginx_version }}
+    ./configure --prefix=/etc/nginx --pid-path=/var/run/nginx.pid --conf-path=/etc/nginx/nginx.conf --sbin-path=/usr/sbin/nginx --user=nginx --group=nginx --with-pcre --error-log-path=/var/log/nginx/error.log --with-file-aio --with-http_realip_module --with-http_gzip_static_module --with-http_ssl_module --with-http_gzip_static_module --with-http_stub_status_module --without-http_scgi_module --without-http_uwsgi_module --without-http_fastcgi_module
+    make
+    make install
+
+- name: Copy nginx configuration
+  template: 
+    src: nginx.conf 
+    dest: /etc/nginx/nginx.conf
+
+- name: Create nginx service for systemd
+  template:
+    src: nginx.service
+    dest: /lib/systemd/system/nginx.service
+
+- name: Sure nginx starts at boot
+  systemd:
+    name: nginx
+    enabled: yes
+
+- name: Start nginx by systemd
+  systemd: 
+    name: nginx
+    state: started
+
+- name: Create contain directories
+  file:
+    path: "{{ item }}"
+    state: directory
+  with_items:
+    - /etc/nginx/sites-available
+    - /etc/nginx/sites-enabled
+
+- name: Copy proxy_params file to /etc/nginx
+  template: src=proxy_params dest=/etc/nginx/proxy_params
+
+- name: Copy {{ vhost }} site configuration file
+  template: src={{ vhost }}.conf dest=/etc/nginx/sites-available/{{ vhost }}.conf
+
+- name: Enable {{ vhost }} site
+  shell: |
+    cd /etc/nginx/sites-enabled
+    ln -s ../sites-available/{{ vhost }}.conf .
+  notify:
+  - restart nginx
